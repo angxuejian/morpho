@@ -70,9 +70,6 @@ export interface FormItemCore {
   /** 是否为必填字段 */
   required?: boolean;
 
-  /** 占位提示文字 */
-  placeholder?: string;
-
   /** 组件 props 属性配置（透传至组件） */
   props?: Record<string, any>;
 
@@ -108,6 +105,9 @@ export interface FormItemCore {
     /** 动态更新已有表单项（除 id 外字段为可选） */
     updateFields?: PartialExceptId<FormItem>[];
   };
+  
+  /** 子项 */
+  children?: FormItem[]
 }
 
 /**

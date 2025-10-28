@@ -20,14 +20,15 @@ export interface dataSourceFormItem {
   responsePath?: string;
 }
 
+export type component = 'input' | 'grid' | 'card'
+
 export interface FormItemCore {
   itemType: 'void' | 'string' | 'number' | 'boolean' | 'object' | 'array';
   itemKey: string;
   itemValue?: any;
-  component: 'input';
+  component: component;
   itemLabel? : string;
   required?: boolean;
-  placeholder?: string;
   props?: Record<string, any>;
   dataSource?: dataSourceOptions;
   reactions?: {
@@ -39,7 +40,8 @@ export interface FormItemCore {
     addFormItem?: dataSourceFormItem;
     removeFormItem?: FormBaseID | FormBaseID[];
     updateFields?: PartialExceptId<FormItem>[]
-  }
+  },
+  children?: FormItem[]
 }
 
 export type FormItem = FormBaseID & FormItemCore;
