@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { NInput, NCard, NSelect, NCascader } from 'naive-ui';
-import { computed, watch, onBeforeMount, reactive } from 'vue';
-import type { FormItem } from '@/types/form';
-import { useOptionsStore } from '@/stores/options';
+import { NInput, NCard, NSelect, NCascader } from 'naive-ui'
+import { computed, watch, onBeforeMount, reactive } from 'vue'
+import type { FormItem } from '@/types/form'
+import { useOptionsStore } from '@/stores/options'
 import get from 'lodash/get'
 
 interface Props {
@@ -37,7 +37,15 @@ const updateBindProps = async () => {
   Object.assign(bindProps, props.formItem.props || {}, { loading: false })
 
   if (props.formItem.dataSource) {
-    const { type, data, url, responsePath = '',  label = 'label', value = 'value', children = 'children' } = props.formItem.dataSource
+    const {
+      type,
+      data,
+      url,
+      responsePath = '',
+      label = 'label',
+      value = 'value',
+      children = 'children'
+    } = props.formItem.dataSource
     if (type === 'static') {
       bindProps.options = data
     } else if (type === 'remote' && url) {
@@ -64,7 +72,6 @@ onBeforeMount(() => {
   updateBindProps()
 })
 
-
 watch(
   () => [props.formItem.dataSource, props.formItem.props],
   () => {
@@ -74,13 +81,17 @@ watch(
 )
 </script>
 
-
 <template>
-    <component v-if="isUseModelValue" :is="componentToRender" v-model:value="model" v-bind="bindProps" ></component>
+  <component
+    v-if="isUseModelValue"
+    :is="componentToRender"
+    v-model:value="model"
+    v-bind="bindProps"
+  ></component>
 
-    <!-- v-slots -->
-    <!-- 可扩展加载多个 slots -->
-    <component v-else :is="componentToRender" v-bind="bindProps">
-      <slot />
-    </component>
+  <!-- v-slots -->
+  <!-- 可扩展加载多个 slots -->
+  <component v-else :is="componentToRender" v-bind="bindProps">
+    <slot />
+  </component>
 </template>

@@ -5,7 +5,7 @@
  */
 export interface FormBaseID {
   /** 表单项唯一标识符 */
-  id: string;
+  id: string
 }
 
 /**
@@ -15,21 +15,21 @@ export interface FormBaseID {
  */
 export interface dataSourceOptions {
   /** 数据源类型：静态(static) 或 远程(remote) */
-  type: 'static' | 'remote';
+  type: 'static' | 'remote'
   /** 静态数据内容（当 type = 'static' 时生效） */
-  data?: any;
+  data?: any
   /** 远程接口地址（当 type = 'remote' 时生效） */
-  url?: string;
+  url?: string
   /** 显示字段名称（默认 'label'） */
-  label?: 'label' | string;
+  label?: 'label' | string
   /** 值字段名称（默认 'value'） */
-  value?: 'value' | string;
+  value?: 'value' | string
   /** 子节点字段名称（层级结构时使用） */
-  children?: 'children' | string;
+  children?: 'children' | string
   /** 响应数据的路径（如 'data.items'） */
-  responsePath?: string;
+  responsePath?: string
   /** 默认值 */
-  defaultValue?: string | number;
+  defaultValue?: string | number
 }
 
 /**
@@ -39,13 +39,13 @@ export interface dataSourceOptions {
  */
 export interface dataSourceFormItem {
   /** 数据源类型 */
-  type: 'static' | 'remote';
+  type: 'static' | 'remote'
   /** 静态新增的表单项（当 type = 'static' 时生效） */
-  data?: FormItem[];
+  data?: FormItem[]
   /** 远程获取表单项的接口地址 */
-  url?: string;
+  url?: string
   /** 响应数据路径（用于提取表单项结构） */
-  responsePath?: string;
+  responsePath?: string
 }
 
 /**
@@ -53,28 +53,28 @@ export interface dataSourceFormItem {
  */
 export interface FormItemCore {
   /** 字段类型（决定数据结构） */
-  itemType: 'void' | 'string' | 'number' | 'boolean' | 'object' | 'array';
+  itemType: 'void' | 'string' | 'number' | 'boolean' | 'object' | 'array'
 
   /** 字段键名（对应表单模型的字段名） */
-  itemKey: string;
+  itemKey: string
 
   /** 默认值（初始表单值） */
-  itemValue?: any;
+  itemValue?: any
 
   /** 渲染组件类型，如 input、select、checkbox 等 */
-  component: 'input';
+  component: 'input'
 
   /** 表单项标签（显示在 UI 上的名称） */
-  itemLabel?: string;
+  itemLabel?: string
 
   /** 是否为必填字段 */
-  required?: boolean;
+  required?: boolean
 
   /** 组件 props 属性配置（透传至组件） */
-  props?: Record<string, any>;
+  props?: Record<string, any>
 
   /** 表单项数据源配置（如下拉选项等） */
-  dataSource?: dataSourceOptions;
+  dataSource?: dataSourceOptions
 
   /**
    * 联动与动态行为配置
@@ -82,30 +82,30 @@ export interface FormItemCore {
    */
   reactions?: {
     /** 依赖字段 ID（或 ID 数组） */
-    dependencies: string | string[];
+    dependencies: string | string[]
 
     /** 条件表达式（如 `{{$deps.age > 18}}`） */
-    when?: string;
+    when?: string
 
     /** 是否显示该字段（与条件搭配使用） */
-    visible?: boolean;
+    visible?: boolean
 
     /** 是否禁用该字段（与条件搭配使用） */
-    disable?: boolean;
+    disable?: boolean
 
     /** 动态更新数据源（如下拉选项） */
-    dataSource?: dataSourceOptions;
+    dataSource?: dataSourceOptions
 
     /** 动态新增表单项配置 */
-    addFormItem?: dataSourceFormItem;
+    addFormItem?: dataSourceFormItem
 
     /** 动态移除表单项（支持单个或多个 ID） */
-    removeFormItem?: FormBaseID | FormBaseID[];
+    removeFormItem?: FormBaseID | FormBaseID[]
 
     /** 动态更新已有表单项（除 id 外字段为可选） */
-    updateFields?: PartialExceptId<FormItem>[];
-  };
-  
+    updateFields?: PartialExceptId<FormItem>[]
+  }
+
   /** 子项 */
   children?: FormItem[]
 }
@@ -114,7 +114,7 @@ export interface FormItemCore {
  * 完整表单项定义
  * 继承自基础 ID 类型 + 核心配置
  */
-export type FormItem = FormBaseID & FormItemCore;
+export type FormItem = FormBaseID & FormItemCore
 
 /**
  * 工具类型：除 `id` 外的所有字段变为可选
@@ -122,5 +122,5 @@ export type FormItem = FormBaseID & FormItemCore;
  */
 export type PartialExceptId<T extends { id: any }> = {
   /** 必填 ID 字段 */
-  id: T['id'];
-} & Partial<Omit<T, 'id'>>;
+  id: T['id']
+} & Partial<Omit<T, 'id'>>

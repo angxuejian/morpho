@@ -11,7 +11,7 @@ const list = ref<FormItem[]>([
     itemLabel: '用户11110',
     component: 'select',
     props: {
-      placeholder: 'test111',
+      placeholder: 'test111'
     },
     dataSource: {
       type: 'remote',
@@ -32,9 +32,7 @@ const list = ref<FormItem[]>([
     },
     dataSource: {
       type: 'static',
-      data: [
-        { label: '浙江', value: '1', children: [ { label: '杭州', value: '1-1'}]}
-      ]
+      data: [{ label: '浙江', value: '1', children: [{ label: '杭州', value: '1-1' }] }]
     }
   }
   // {

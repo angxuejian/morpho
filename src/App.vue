@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { NConfigProvider } from 'naive-ui';
+import { NConfigProvider } from 'naive-ui'
 </script>
 
 <template>
   <NConfigProvider>
-      <RouterView />
+    <RouterView />
   </NConfigProvider>
 </template>
 
-
 <style>
-@import "tailwindcss" important;
+@import 'tailwindcss' important;
 </style>

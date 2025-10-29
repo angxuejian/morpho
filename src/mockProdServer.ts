@@ -2,7 +2,6 @@
 import { createProdMockServer } from 'vite-plugin-mock/client'
 import type { MockMethod } from 'vite-plugin-mock'
 
-
 export function setupProdMockServer() {
   // 自动导入所有 mock 文件
   const modules = import.meta.glob('../mock/**/*.ts', { eager: true })
@@ -24,7 +23,6 @@ export function setupProdMockServer() {
   createProdMockServerFetch(mockList)
 }
 
-
 const getFetchUrl = (input: RequestInfo | URL): string => {
   if (typeof input === 'string') {
     return input
@@ -43,13 +41,11 @@ const getFetchUrl = (input: RequestInfo | URL): string => {
   return String(input)
 }
 
-
 const createProdMockServerFetch = (mockList: MockMethod[]) => {
   const originalFetch = window.fetch.bind(window)
   const urlList = mockList.map((item: MockMethod) => item.url)
 
   window.fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
-
     // ✅ 支持相对路径的匹配
     const path = getFetchUrl(url)
     const isMockUrl = urlList.includes(path)
@@ -63,7 +59,7 @@ const createProdMockServerFetch = (mockList: MockMethod[]) => {
       const response = new Response(JSON.stringify(mockResponse), {
         headers,
         status: 200,
-        statusText: 'OK',
+        statusText: 'OK'
       })
 
       return response

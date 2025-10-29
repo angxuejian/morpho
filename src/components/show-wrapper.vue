@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { ref, type Ref } from 'vue'
-import { NButton } from 'naive-ui';
-import formWrapper from '@/components/form-wrapper.vue';
-import showItem from './show-item.vue';
+import { NButton } from 'naive-ui'
+import formWrapper from '@/components/form-wrapper.vue'
+import showItem from './show-item.vue'
 import type { FormItem } from '@/types/form'
 
 interface Props {
@@ -24,7 +24,6 @@ const rules = ref({
   }
 })
 
-
 const submit = () => {
   console.log(formValue.value)
   formRef.value.validate()
@@ -34,7 +33,6 @@ const reset = () => {
   formRef.value.clearValidate()
 }
 </script>
-
 
 <template>
   <div>
@@ -47,5 +45,4 @@ const reset = () => {
       <NButton @click="reset" type="error">reset</NButton>
     </div>
   </div>
-
 </template>
