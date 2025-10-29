@@ -4,6 +4,7 @@ import { NButton } from 'naive-ui'
 import formWrapper from '@/components/form-wrapper.vue'
 import showItem from './show-item.vue'
 import type { FormItem } from '@/types/form'
+import { useFormWrapper } from '@/hooks/use-form-wrapper'
 
 interface Props {
   list: FormItem[]
@@ -11,21 +12,13 @@ interface Props {
 
 const props = defineProps<Props>()
 const formRef: Ref = ref()
-const formValue = ref<Record<string, any>>({
-  user: null,
-  obj: {},
-  aobj: {},
-  card: {}
-})
 
-const rules = ref({
-  user: {
-    required: true
-  }
-})
+const { formValue, formRules } = useFormWrapper(props.list)
+
+
 
 const submit = () => {
-  console.log(formValue.value)
+  console.log(formValue)
   formRef.value.validate()
 }
 
@@ -36,7 +29,7 @@ const reset = () => {
 
 <template>
   <div>
-    <form-wrapper ref="formRef" :model="formValue" :rules="rules">
+    <form-wrapper ref="formRef" :model="formValue" :rules="formRules">
       <show-item v-model:formValue="formValue" :items="props.list" />
     </form-wrapper>
 

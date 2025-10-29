@@ -16,6 +16,7 @@ const checkFormItemComponent = (component: string) => {
   return list.includes(component)
 }
 
+// 计算
 const calcPath = (current: string, parent?: string) => {
   const p = [current]
   if (parent) {
@@ -27,15 +28,47 @@ const calcPath = (current: string, parent?: string) => {
   return p
 }
 
-const setPath = (current: string) => {
-  return calcPath(current)
+// 设置 ShowItem 和 FormItem 和 FormItemGi 的 path 属性
+const setPath = (item: FormItem, parent?: number | string, isGrid?: boolean) => {
+
+  if (item.itemType === 'void') return undefined
+  else if (parent !== undefined) {
+    if (isGrid) {
+      // grid 布局
+      return calcPath(item.itemKey, `${parent}`)
+    } else {
+      // array 布局
+      return calcPath(`${parent}`, item.itemKey)
+    }
+  } else {
+    // 非表单组件
+    return calcPath(item.itemKey)
+  }
 }
 
+// 根据 props.path + item.itemKey + parent.itemKey
+// 拼接 FormItem 和 FormItemGi 的 path 属性
+const getPath = (item: FormItem, parent?: string) => {
+  const p = calcPath(item.itemKey, parent)
+  let result = ''
+  for (let i = 0; i < p.length; i++) {
+    const curr = p[i];
+    if (curr) {
+      const isNumber = Number(curr).toString() !== 'NaN'
+      const connector = !i ? '' : !isNumber ? '.' : ''; // 数字前不加点
+      result += connector + (!isNumber ? curr : `[${curr}]`);
+    }
+  }
+  return result
+}
+
+// 手动v-model, 获取多层嵌套formValue的值
 const getValue = (current: string, parent?: string) => {
   const p = calcPath(current, parent)
   return p.reduce((acc, key) => acc?.[key], formValue.value)
 }
 
+// 手动v-model, 赋值给多层嵌套formValue
 const setValue = (val: any, current: string, parent?: string) => {
   const p = calcPath(current, parent)
   const lastKey = p.pop()!
@@ -55,6 +88,7 @@ const setValue = (val: any, current: string, parent?: string) => {
       <NGrid v-bind="item.props">
         <NFormItemGi
           :label="itemgi.itemLabel"
+          :path="getPath(itemgi, item.itemKey)"
           v-bind="itemgi.props"
           :data-id="itemgi.id"
           :data-field="itemgi.itemKey"
@@ -63,7 +97,7 @@ const setValue = (val: any, current: string, parent?: string) => {
         >
           <template v-if="Array.isArray(itemgi.children)">
             <show-item
-              :path="setPath(itemgi.itemKey)"
+              :path="setPath(itemgi, item.itemKey, true)"
               :items="itemgi.children"
               v-model:form-value="formValue"
             ></show-item>
@@ -80,11 +114,28 @@ const setValue = (val: any, current: string, parent?: string) => {
       </NGrid>
     </template>
 
+    <!-- array item 布局 -->
+    <template v-else-if="item.itemType === 'array'">
+      <template v-if="getValue(item.itemKey)">
+        <template v-for="(sub, i) in getValue(item.itemKey)" :key="i">
+          <template v-if="item.children">
+            <show-item
+            :path="setPath(item, i)"
+            :items="item.children"
+            v-model:form-value="formValue"
+            ></show-item>
+          </template>
+        </template>
+      </template>
+
+
+    </template>
+
     <!-- item 布局 -->
     <template v-else-if="checkFormItemComponent(item.component) && formValue">
       <NFormItem
         :label="item.itemLabel"
-        :path="item.itemKey"
+        :path="getPath(item)"
         :data-id="item.id"
         :data-field="item.itemKey"
       >
@@ -101,7 +152,7 @@ const setValue = (val: any, current: string, parent?: string) => {
       <template v-if="Array.isArray(item.children)">
         <form-item :formItem="item">
           <show-item
-            :path="setPath(item.itemKey)"
+            :path="setPath(item)"
             :items="item.children"
             v-model:form-value="formValue"
           ></show-item>
