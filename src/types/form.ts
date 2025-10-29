@@ -20,7 +20,7 @@ export interface dataSourceFormItem {
   responsePath?: string;
 }
 
-export type component = 'input' | 'grid' | 'card'
+export type component = 'input' | 'grid' | 'card' | 'select' | 'cascader'
 
 export interface FormItemCore {
   itemType: 'void' | 'string' | 'number' | 'boolean' | 'object' | 'array';

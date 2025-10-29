@@ -12,7 +12,7 @@ interface Props {
 const props = defineProps<Props>()
 const formRef: Ref = ref()
 const formValue = ref<Record<string, any>>({
-  user: '',
+  user: null,
   obj: {},
   aobj: {},
   card: {}

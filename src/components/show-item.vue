@@ -12,7 +12,7 @@ const formValue = defineModel<Record<string, any>>('form-value')
 const props = defineProps<Props>()
 
 const checkFormItemComponent = (component: string) => {
-  const list = ['input']
+  const list = ['input', 'select', 'cascader']
   return list.includes(component)
 }
 
