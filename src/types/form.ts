@@ -20,7 +20,7 @@ export interface dataSourceFormItem {
   responsePath?: string
 }
 
-export type component = 'input' | 'grid' | 'card' | 'select' | 'cascader'
+export type component = 'input' | 'grid' | 'card' | 'select' | 'cascader' | 'list'
 
 export interface FormItemCore {
   itemType: 'void' | 'string' | 'number' | 'boolean' | 'object' | 'array'
@@ -42,6 +42,7 @@ export interface FormItemCore {
     updateFields?: PartialExceptId<FormItem>[]
   }
   children?: FormItem[]
+  path?: string
 }
 
 export type FormItem = FormBaseID & FormItemCore

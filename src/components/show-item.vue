@@ -5,7 +5,7 @@ import type { FormItem } from '@/types/form'
 
 interface Props {
   items: FormItem[]
-  path?: string[]
+  itemParentPath?: string
 }
 
 const formValue = defineModel<Record<string, any>>('form-value')
@@ -16,61 +16,48 @@ const checkFormItemComponent = (component: string) => {
   return list.includes(component)
 }
 
-// 计算
-const calcPath = (current: string, parent?: string) => {
-  const p = [current]
-  if (parent) {
-    p.unshift(parent)
+// 只有 item.itemType === 'array' 时才会使用动态计算的path
+const calcPath = (item: FormItem, parent?: string) => {
+  if (props.itemParentPath !== undefined) {
+    return [props.itemParentPath, parent, item.itemKey].filter(Boolean).join('.')
+  } else {
+    return item.path!
   }
-  if (Array.isArray(props.path)) {
-    p.unshift(...props.path)
+}
+
+// 只有 item.itemType === 'array' 时才会动态计算path
+const setParentPath = (item: FormItem, i?: string | number) => {
+  let p = ''
+  if (props.itemParentPath !== undefined) {
+    p += props.itemParentPath + '.'
+  }
+  p += item.itemKey
+  if (i !== undefined) {
+    p += `[${i}]`
   }
   return p
 }
 
-// 设置 ShowItem 和 FormItem 和 FormItemGi 的 path 属性
-const setPath = (item: FormItem, parent?: number | string, isGrid?: boolean) => {
-
-  if (item.itemType === 'void') return undefined
-  else if (parent !== undefined) {
-    if (isGrid) {
-      // grid 布局
-      return calcPath(item.itemKey, `${parent}`)
-    } else {
-      // array 布局
-      return calcPath(`${parent}`, item.itemKey)
-    }
-  } else {
-    // 非表单组件
-    return calcPath(item.itemKey)
-  }
-}
-
-// 根据 props.path + item.itemKey + parent.itemKey
-// 拼接 FormItem 和 FormItemGi 的 path 属性
-const getPath = (item: FormItem, parent?: string) => {
-  const p = calcPath(item.itemKey, parent)
-  let result = ''
-  for (let i = 0; i < p.length; i++) {
-    const curr = p[i];
-    if (curr) {
-      const isNumber = Number(curr).toString() !== 'NaN'
-      const connector = !i ? '' : !isNumber ? '.' : ''; // 数字前不加点
-      result += connector + (!isNumber ? curr : `[${curr}]`);
-    }
-  }
-  return result
+const parsePath = (path: string) => {
+  return (
+    path
+      // 把 [0] 这种写法转为 .0
+      .replace(/\[(\w+)\]/g, '.$1')
+      // 去掉多余的前后点
+      .replace(/^\./, '')
+      .split('.')
+  )
 }
 
 // 手动v-model, 获取多层嵌套formValue的值
-const getValue = (current: string, parent?: string) => {
-  const p = calcPath(current, parent)
+const getValue = (path: string) => {
+  const p = parsePath(path)
   return p.reduce((acc, key) => acc?.[key], formValue.value)
 }
 
 // 手动v-model, 赋值给多层嵌套formValue
-const setValue = (val: any, current: string, parent?: string) => {
-  const p = calcPath(current, parent)
+const setValue = (val: any, path: string) => {
+  const p = parsePath(path)
   const lastKey = p.pop()!
   let obj = formValue.value || {}
   for (let i = 0; i < p.length; i++) {
@@ -88,16 +75,17 @@ const setValue = (val: any, current: string, parent?: string) => {
       <NGrid v-bind="item.props">
         <NFormItemGi
           :label="itemgi.itemLabel"
-          :path="getPath(itemgi, item.itemKey)"
+          :path="calcPath(itemgi, item.itemKey)"
           v-bind="itemgi.props"
           :data-id="itemgi.id"
-          :data-field="itemgi.itemKey"
+          :data-field="calcPath(itemgi, item.itemKey)"
           v-for="(itemgi, indexgi) in item.children"
           :key="indexgi"
         >
+          <!-- show-item -->
           <template v-if="Array.isArray(itemgi.children)">
             <show-item
-              :path="setPath(itemgi, item.itemKey, true)"
+              :itemParentPath="setParentPath(item)"
               :items="itemgi.children"
               v-model:form-value="formValue"
             ></show-item>
@@ -105,8 +93,9 @@ const setValue = (val: any, current: string, parent?: string) => {
 
           <template v-else>
             <form-item
-              @update:val="(val: any) => setValue(val, itemgi.itemKey, item.itemKey)"
-              :val="getValue(itemgi.itemKey, item.itemKey)"
+              :formItemPath="calcPath(itemgi, item.itemKey)"
+              @update:val="(val: any) => setValue(val, calcPath(itemgi, item.itemKey))"
+              :val="getValue(calcPath(itemgi, item.itemKey))"
               :formItem="itemgi"
             ></form-item>
           </template>
@@ -116,32 +105,32 @@ const setValue = (val: any, current: string, parent?: string) => {
 
     <!-- array item 布局 -->
     <template v-else-if="item.itemType === 'array'">
-      <template v-if="getValue(item.itemKey)">
-        <template v-for="(sub, i) in getValue(item.itemKey)" :key="i">
-          <template v-if="item.children">
+      <form-item :formItemPath="calcPath(item)" :formItem="item">
+        <!-- show-item -->
+        <template v-if="item.children && getValue(item.path!)">
+          <template v-for="(sub, i) in getValue(item.path!)" :key="i">
             <show-item
-            :path="setPath(item, i)"
-            :items="item.children"
-            v-model:form-value="formValue"
+              :itemParentPath="setParentPath(item, i)"
+              :items="item.children"
+              v-model:form-value="formValue"
             ></show-item>
           </template>
         </template>
-      </template>
-
-
+      </form-item>
     </template>
 
     <!-- item 布局 -->
     <template v-else-if="checkFormItemComponent(item.component) && formValue">
       <NFormItem
         :label="item.itemLabel"
-        :path="getPath(item)"
+        :path="calcPath(item)"
         :data-id="item.id"
-        :data-field="item.itemKey"
+        :data-field="calcPath(item)"
       >
         <form-item
-          @update:val="(val: any) => setValue(val, item.itemKey)"
-          :val="getValue(item.itemKey)"
+          :formItemPath="calcPath(item)"
+          @update:val="(val: any) => setValue(val, calcPath(item))"
+          :val="getValue(calcPath(item))"
           :formItem="item"
         ></form-item>
       </NFormItem>
@@ -149,19 +138,16 @@ const setValue = (val: any, current: string, parent?: string) => {
 
     <!-- 非表单组件 -->
     <template v-else>
-      <template v-if="Array.isArray(item.children)">
-        <form-item :formItem="item">
+      <form-item :formItemPath="calcPath(item)" :formItem="item">
+        <!-- show-item -->
+        <template v-if="Array.isArray(item.children)">
           <show-item
-            :path="setPath(item)"
+            :itemParentPath="setParentPath(item)"
             :items="item.children"
             v-model:form-value="formValue"
           ></show-item>
-        </form-item>
-      </template>
-
-      <template v-else>
-        <form-item :formItem="item"></form-item>
-      </template>
+        </template>
+      </form-item>
     </template>
   </template>
 </template>

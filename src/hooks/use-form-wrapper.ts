@@ -1,11 +1,8 @@
-
-import { reactive } from "vue";
-import type { FormItem } from '@/types/form';
-import type { FormItemRule } from "naive-ui";
-
+import { reactive } from 'vue'
+import type { FormItem } from '@/types/form'
+import type { FormItemRule } from 'naive-ui'
 
 export function useFormWrapper(formItems: FormItem[]) {
-
   const formValue = reactive<Record<string, any>>({})
   const formRules = reactive<Record<string, FormItemRule>>({})
 
@@ -17,24 +14,68 @@ export function useFormWrapper(formItems: FormItem[]) {
     return Array.isArray(val)
   }
 
+  const createPath = (list: FormItem[], path?: string) => {
+    list.forEach((item: FormItem) => {
+      const { itemKey, itemType, children } = item
+
+      const setPath = (k: string, p?: string) => {
+        let key = ''
+        if (p) key += p
+        key += k
+        return key
+      }
+
+      switch (itemType) {
+        case 'void': {
+          if (children) {
+            const p = path ?? ''
+            createPath(children, p)
+          }
+          break
+        }
+        case 'object': {
+          if (children) {
+            const p = path ?? ''
+            createPath(children, `${p}${itemKey}.`)
+          }
+          item['path'] = setPath(itemKey, path)
+          break
+        }
+        case 'array': {
+          if (children) {
+            const p = path ?? ''
+            createPath(children, `${p}${itemKey}[0].`)
+          }
+          item['path'] = setPath(itemKey, path)
+          break
+        }
+
+        default: {
+          item['path'] = setPath(itemKey, path)
+          break
+        }
+      }
+    })
+  }
+
   const createRule = (item: FormItem) => {
     const { itemType, component } = item
 
     let validator: null | ((_: any, val: any) => void) = null
 
-    const message = `Please ${component === "input" ? "enter" : "select"}`
+    const message = `Please ${component === 'input' ? 'enter' : 'select'}`
 
     if (itemType === 'number' && component === 'input') {
-    validator = (_: any, val: any) => {
-      if (val === '' || val === null || val === undefined) {
-        return new Error(message)
+      validator = (_: any, val: any) => {
+        if (val === '' || val === null || val === undefined) {
+          return new Error(message)
+        }
+        if (isNaN(Number(val))) {
+          return new Error('Not number')
+        }
+        return true
       }
-      if (isNaN(Number(val))) {
-        return new Error('Not number')
-      }
-      return true
     }
-  }
 
     return {
       type: itemType,
@@ -44,22 +85,22 @@ export function useFormWrapper(formItems: FormItem[]) {
     }
   }
 
-
   const build = (list: FormItem[], path?: string) => {
     const data: Record<string, any> = {}
     const rule: Record<string, any> = {}
 
-    list.forEach((item: FormItem, index: number) => {
+    list.forEach((item: FormItem) => {
       const { itemType, itemKey, itemValue, children, required = false } = item
 
       switch (itemType) {
         case 'void': {
           if (children) {
-            const { data: d, rule: r } = build(children)
+            const p = path ?? ''
+            const { data: d, rule: r } = build(children, p)
             Object.assign(data, d)
             Object.assign(rule, r)
           }
-          break;
+          break
         }
 
         case 'object': {
@@ -72,9 +113,9 @@ export function useFormWrapper(formItems: FormItem[]) {
             Object.assign(val, d)
             Object.assign(rVal, r)
           }
-          Object.assign(data, { [itemKey]: val } )
+          Object.assign(data, { [itemKey]: val })
           Object.assign(rule, rVal)
-          break;
+          break
         }
 
         case 'array': {
@@ -84,14 +125,14 @@ export function useFormWrapper(formItems: FormItem[]) {
           if (children) {
             const p = path ?? ''
             const { data: d, rule: r } = build(children, `${p}${itemKey}[0].`)
-            
+
             arr.push(d)
             Object.assign(rVal, r)
           }
 
           Object.assign(data, { [itemKey]: arr })
           Object.assign(rule, rVal)
-          break;
+          break
         }
 
         default: {
@@ -108,9 +149,8 @@ export function useFormWrapper(formItems: FormItem[]) {
 
             rule[key] = createRule(item)
           }
-          break;
+          break
         }
-
       }
     })
 
@@ -118,7 +158,9 @@ export function useFormWrapper(formItems: FormItem[]) {
   }
 
   const { data: result, rule: r } = build(formItems)
+  createPath(formItems)
 
+  console.log(formItems, '1')
   console.log(result, '::::')
   console.log(r)
 

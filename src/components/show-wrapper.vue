@@ -15,7 +15,26 @@ const formRef: Ref = ref()
 
 const { formValue, formRules } = useFormWrapper(props.list)
 
+// setTimeout(() => {
+//   Object.assign(formValue, {
+//     list: [
+//       { teacher: null, test: [ { input: {a: null, b: null } }, { input: {a: null, b: null} }] },
+//       { teacher: null, test: [ { input: {a: null, b: null } }, { input: {a: null, b: null} }] },
 
+//       // { teacher: null }
+//     ]
+//   })
+
+//   Object.assign(formRules, {
+//     'list[0].teacher': { required: true },
+//     "list[0].test[0].input.a": { required: true, message: '123' },
+//     "list[0].test[1].input.a": { required: true },
+//     "list[0].test[0].input.b": { required: true },
+//     "list[0].test[1].input.b": { required: true },
+//     // 'list[0].teacher': { required: true },
+//     // 'list[1].teacher': { required: true }
+//   })
+// }, 5000);
 
 const submit = () => {
   console.log(formValue)

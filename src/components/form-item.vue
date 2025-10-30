@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { NInput, NCard, NSelect, NCascader } from 'naive-ui'
+import ListWrapper from './list-wrapper.vue'
 import { computed, watch, onBeforeMount, reactive } from 'vue'
 import type { FormItem } from '@/types/form'
 import { useOptionsStore } from '@/stores/options'
@@ -7,6 +8,7 @@ import get from 'lodash/get'
 
 interface Props {
   formItem: FormItem
+  formItemPath?: string
 }
 
 const model = defineModel<any>('val')
@@ -19,7 +21,8 @@ const components = {
   input: NInput,
   card: NCard,
   select: NSelect,
-  cascader: NCascader
+  cascader: NCascader,
+  list: ListWrapper
 } as const
 
 const isUseModelValue = computed(() => {
@@ -91,7 +94,7 @@ watch(
 
   <!-- v-slots -->
   <!-- 可扩展加载多个 slots -->
-  <component v-else :is="componentToRender" v-bind="bindProps">
+  <component v-else :is="componentToRender" :path="props.formItemPath" v-bind="bindProps">
     <slot />
   </component>
 </template>

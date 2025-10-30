@@ -62,7 +62,7 @@ export interface FormItemCore {
   itemValue?: any
 
   /** 渲染组件类型，如 input、select、checkbox 等 */
-  component: 'input'
+  component: 'input' | 'grid' | 'card' | 'select' | 'cascader' | 'list'
 
   /** 表单项标签（显示在 UI 上的名称） */
   itemLabel?: string
@@ -108,6 +108,9 @@ export interface FormItemCore {
 
   /** 子项 */
   children?: FormItem[]
+
+  /** 字段路径, 会自动计算 */
+  path?: string
 }
 
 /**
