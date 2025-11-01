@@ -6,7 +6,7 @@ import { viteMockServe } from 'vite-plugin-mock'
 
 // // https://vitejs.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/morpho/',
   plugins: [
     vue(),
     tailwindcss(),
