@@ -71,9 +71,9 @@ const updateBindProps = async () => {
   }
 }
 
-onBeforeMount(() => {
-  updateBindProps()
-})
+// onBeforeMount(() => {
+//   updateBindProps()
+// })
 
 watch(
   () => [props.formItem.dataSource, props.formItem.props],
@@ -85,16 +85,16 @@ watch(
 </script>
 
 <template>
-  <component
-    v-if="isUseModelValue"
-    :is="componentToRender"
-    v-model:value="model"
-    v-bind="bindProps"
-  ></component>
+    <component
+      v-if="isUseModelValue"
+      :is="componentToRender"
+      v-model:value="model"
+      v-bind="bindProps"
+    ></component>
 
-  <!-- v-slots -->
-  <!-- 可扩展加载多个 slots -->
-  <component v-else :is="componentToRender" :path="props.formItemPath" v-bind="bindProps">
-    <slot />
-  </component>
-</template>
+    <!-- v-slots -->
+    <!-- 可扩展加载多个 slots -->
+    <component v-else :is="componentToRender" :path="props.formItemPath" v-bind="bindProps">
+      <slot />
+    </component>
+  </template>

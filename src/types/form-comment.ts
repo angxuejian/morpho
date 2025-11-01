@@ -48,6 +48,41 @@ export interface dataSourceFormItem {
   responsePath?: string
 }
 
+
+/**
+ * 新增表单项方法，返回表单项（暂不支持 reactionsOptions ）
+ */
+export type dataSourceFormItemFn = () => Exclude<FormItem, reactionsOptions> | Promise<Exclude<FormItem, reactionsOptions>>
+
+/**
+ * 字段联动与动态行为配置项
+ *
+ * 用于描述表单项之间的依赖关系、显示控制、数据源更新、以及动态新增表单项等逻辑。
+ */
+export interface reactionsOptions {
+  /** 依赖的字段键名（或字段路径） 当依赖字段的值变化时，会触发当前表单项的联动逻辑。 示例：'age' 或 'user.info.gender' */
+  dependencies: string
+
+  // when?: string
+
+  /** 控制字段显示的可见性（与条件表达式搭配使用） */
+  visible?: boolean
+
+  // disable?: boolean
+
+  /** 动态数据源配置 */
+  dataSource?: dataSourceOptions
+
+  /** 存储 addFormItemFn 方法 返回的表单项，无需手动配置 */
+  addFormItem?: FormItem
+
+  /** 返回表单项（暂不支持 reactionsOptions ） */
+  addFormItemFn?: dataSourceFormItemFn
+
+  // removeFormItem?: FormBaseID | FormBaseID[]
+  // updateFields?: PartialExceptId<FormItem>[]
+}
+
 /**
  * 表单项核心配置（不含全局继承字段）
  */
@@ -70,8 +105,8 @@ export interface FormItemCore {
   /** 是否为必填字段 */
   required?: boolean
 
-  /** 组件 props 属性配置（透传至组件） */
-  props?: Record<string, any>
+  /** 组件 props 属性配置（透传至组件）itemVisible 与 reactions.visible 配合使用 */
+  props?: Record<string, any> & { itemVisible?: boolean }
 
   /** 表单项数据源配置（如下拉选项等） */
   dataSource?: dataSourceOptions
@@ -80,31 +115,7 @@ export interface FormItemCore {
    * 联动与动态行为配置
    * 可根据其他字段的值控制当前字段的显示、禁用、数据源、动态增删改项等
    */
-  reactions?: {
-    /** 依赖字段 ID（或 ID 数组） */
-    dependencies: string | string[]
-
-    /** 条件表达式（如 `{{$deps.age > 18}}`） */
-    when?: string
-
-    /** 是否显示该字段（与条件搭配使用） */
-    visible?: boolean
-
-    /** 是否禁用该字段（与条件搭配使用） */
-    disable?: boolean
-
-    /** 动态更新数据源（如下拉选项） */
-    dataSource?: dataSourceOptions
-
-    /** 动态新增表单项配置 */
-    addFormItem?: dataSourceFormItem
-
-    /** 动态移除表单项（支持单个或多个 ID） */
-    removeFormItem?: FormBaseID | FormBaseID[]
-
-    /** 动态更新已有表单项（除 id 外字段为可选） */
-    updateFields?: PartialExceptId<FormItem>[]
-  }
+  reactions?: reactionsOptions
 
   /** 子项 */
   children?: FormItem[]

@@ -11,6 +11,17 @@ interface Props {
 const formValue = defineModel<Record<string, any>>('form-value')
 const props = defineProps<Props>()
 
+const isShowItem = (formItem: FormItem) => {
+  if (!formItem.props) {
+    if (formItem.reactions?.visible) return false
+    else return true
+  }
+  else {
+    if (formItem.props.itemVisible !== undefined) return formItem.props.itemVisible
+    else return true
+  }
+}
+
 const checkFormItemComponent = (component: string) => {
   const list = ['input', 'select', 'cascader']
   return list.includes(component)
@@ -70,84 +81,86 @@ const setValue = (val: any, path: string) => {
 
 <template>
   <template v-for="(item, index) in props.items" :key="index">
-    <!-- grid 布局 -->
-    <template v-if="item.component === 'grid' && formValue">
-      <NGrid v-bind="item.props">
-        <NFormItemGi
-          :label="itemgi.itemLabel"
-          :path="calcPath(itemgi, item.itemKey)"
-          v-bind="itemgi.props"
-          :data-id="itemgi.id"
-          :data-field="calcPath(itemgi, item.itemKey)"
-          v-for="(itemgi, indexgi) in item.children"
-          :key="indexgi"
-        >
+    <template v-if="isShowItem(item)">
+      <!-- grid 布局 -->
+      <template v-if="item.component === 'grid' && formValue">
+        <NGrid v-bind="item.props">
+          <NFormItemGi
+            :label="itemgi.itemLabel"
+            :path="calcPath(itemgi, item.itemKey)"
+            v-bind="itemgi.props"
+            :data-id="itemgi.id"
+            :data-field="calcPath(itemgi, item.itemKey)"
+            v-for="(itemgi, indexgi) in item.children"
+            :key="indexgi"
+          >
+            <!-- show-item -->
+            <template v-if="Array.isArray(itemgi.children)">
+              <show-item
+                :itemParentPath="setParentPath(item)"
+                :items="itemgi.children"
+                v-model:form-value="formValue"
+              ></show-item>
+            </template>
+
+            <template v-else>
+              <form-item
+                :formItemPath="calcPath(itemgi, item.itemKey)"
+                @update:val="(val: any) => setValue(val, calcPath(itemgi, item.itemKey))"
+                :val="getValue(calcPath(itemgi, item.itemKey))"
+                :formItem="itemgi"
+              ></form-item>
+            </template>
+          </NFormItemGi>
+        </NGrid>
+      </template>
+
+      <!-- array item 布局 -->
+      <template v-else-if="item.itemType === 'array'">
+        <form-item :formItemPath="calcPath(item)" :formItem="item">
           <!-- show-item -->
-          <template v-if="Array.isArray(itemgi.children)">
+          <template v-if="item.children && getValue(calcPath(item))">
+            <template v-for="(sub, i) in getValue(calcPath(item))" :key="i">
+              <show-item
+                :itemParentPath="setParentPath(item, i)"
+                :items="item.children"
+                v-model:form-value="formValue"
+              ></show-item>
+            </template>
+          </template>
+        </form-item>
+      </template>
+
+      <!-- item 布局 -->
+      <template v-else-if="checkFormItemComponent(item.component) && formValue">
+        <NFormItem
+          :label="item.itemLabel"
+          :path="calcPath(item)"
+          :data-id="item.id"
+          :data-field="calcPath(item)"
+        >
+          <form-item
+            :formItemPath="calcPath(item)"
+            @update:val="(val: any) => setValue(val, calcPath(item))"
+            :val="getValue(calcPath(item))"
+            :formItem="item"
+          ></form-item>
+        </NFormItem>
+      </template>
+
+      <!-- 非表单组件 -->
+      <template v-else>
+        <form-item :formItemPath="calcPath(item)" :formItem="item">
+          <!-- show-item -->
+          <template v-if="Array.isArray(item.children)">
             <show-item
               :itemParentPath="setParentPath(item)"
-              :items="itemgi.children"
-              v-model:form-value="formValue"
-            ></show-item>
-          </template>
-
-          <template v-else>
-            <form-item
-              :formItemPath="calcPath(itemgi, item.itemKey)"
-              @update:val="(val: any) => setValue(val, calcPath(itemgi, item.itemKey))"
-              :val="getValue(calcPath(itemgi, item.itemKey))"
-              :formItem="itemgi"
-            ></form-item>
-          </template>
-        </NFormItemGi>
-      </NGrid>
-    </template>
-
-    <!-- array item 布局 -->
-    <template v-else-if="item.itemType === 'array'">
-      <form-item :formItemPath="calcPath(item)" :formItem="item">
-        <!-- show-item -->
-        <template v-if="item.children && getValue(calcPath(item))">
-          <template v-for="(sub, i) in getValue(calcPath(item))" :key="i">
-            <show-item
-              :itemParentPath="setParentPath(item, i)"
               :items="item.children"
               v-model:form-value="formValue"
             ></show-item>
           </template>
-        </template>
-      </form-item>
-    </template>
-
-    <!-- item 布局 -->
-    <template v-else-if="checkFormItemComponent(item.component) && formValue">
-      <NFormItem
-        :label="item.itemLabel"
-        :path="calcPath(item)"
-        :data-id="item.id"
-        :data-field="calcPath(item)"
-      >
-        <form-item
-          :formItemPath="calcPath(item)"
-          @update:val="(val: any) => setValue(val, calcPath(item))"
-          :val="getValue(calcPath(item))"
-          :formItem="item"
-        ></form-item>
-      </NFormItem>
-    </template>
-
-    <!-- 非表单组件 -->
-    <template v-else>
-      <form-item :formItemPath="calcPath(item)" :formItem="item">
-        <!-- show-item -->
-        <template v-if="Array.isArray(item.children)">
-          <show-item
-            :itemParentPath="setParentPath(item)"
-            :items="item.children"
-            v-model:form-value="formValue"
-          ></show-item>
-        </template>
-      </form-item>
+        </form-item>
+      </template>
     </template>
   </template>
 </template>

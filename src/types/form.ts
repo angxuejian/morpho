@@ -13,12 +13,19 @@ export interface dataSourceOptions {
   defaultValue?: string | number
 }
 
-export interface dataSourceFormItem {
-  type: 'static' | 'remote'
-  data?: FormItem[]
-  url?: string
-  responsePath?: string
+export interface reactionsOptions {
+  dependencies: string
+  // when?: string
+  visible?: boolean
+  // disable?: boolean
+  dataSource?: dataSourceOptions
+  addFormItem?: FormItem
+  addFormItemFn?: dataSourceFormItemFn
+  // removeFormItem?: FormBaseID | FormBaseID[]
+  // updateFields?: PartialExceptId<FormItem>[]
 }
+
+export type dataSourceFormItemFn = () => Exclude<FormItem, reactionsOptions> | Promise<Exclude<FormItem, reactionsOptions>>
 
 export type component = 'input' | 'grid' | 'card' | 'select' | 'cascader' | 'list'
 
@@ -29,18 +36,9 @@ export interface FormItemCore {
   component: component
   itemLabel?: string
   required?: boolean
-  props?: Record<string, any>
+  props?: Record<string, any> & { itemVisible?: boolean }
   dataSource?: dataSourceOptions
-  reactions?: {
-    dependencies: string | string[]
-    when?: string
-    visible?: boolean
-    disable?: boolean
-    dataSource?: dataSourceOptions
-    addFormItem?: dataSourceFormItem
-    removeFormItem?: FormBaseID | FormBaseID[]
-    updateFields?: PartialExceptId<FormItem>[]
-  }
+  reactions?: reactionsOptions
   children?: FormItem[]
   path?: string
 }

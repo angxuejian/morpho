@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import type { FormItem } from '@/types/form'
 import type { FormItemRule } from 'naive-ui'
 import _ from 'lodash'
@@ -9,6 +9,83 @@ export type FormCheckArrayLength = (key: string) => number
 export function useFormWrapper(formItems: FormItem[]) {
   const formValue = reactive<Record<string, any>>({})
   const formRules = reactive<Record<string, FormItemRule>>({})
+
+  let watchStopHandles: (() => void)[] = []
+
+  const handleReactions = (dependencies: Record<string, string[]>) => {
+
+    const keys = Object.keys(dependencies)
+    watchStopHandles.forEach((stop) => stop())
+    watchStopHandles = []
+
+    for (let i = 0; i < keys.length; i++) {
+      const valKey = keys[i]
+      const items = dependencies[valKey]
+
+      const stop = watch(
+        () => _.get(formValue, valKey),
+        (newVal, oldVal) => {
+          const isNewVal = Boolean(newVal)
+          if (isNewVal !== Boolean(oldVal)) {
+            items.forEach(async (itemKey) => {
+              const item: FormItem = _.get(formItems, itemKey)
+              if (!item.reactions) return
+
+              // visible
+              if (item.reactions.visible) {
+                if (item.props === undefined) {
+                  item.props = {}
+                }
+                item.props.itemVisible = isNewVal
+              }
+
+              // dataSource
+              if (item.reactions.dataSource) {
+                if (!item.dataSource) return
+
+                if (item.dataSource.type === 'remote') {
+                  const url = item.reactions.dataSource.url + newVal
+                  Object.assign(item.dataSource, item.reactions.dataSource, { url })
+                } else {
+                  Object.assign(item.dataSource, item.reactions.dataSource)
+                }
+              }
+
+              // addFormItemFn
+              if (item.reactions.addFormItemFn) {
+                if (isNewVal) {
+                  const result = item.reactions.addFormItemFn()
+                  const newItem: FormItem = result instanceof Promise ? await result : result
+                  item.reactions.addFormItem = newItem
+                  rebuild(newItem)
+
+                  if (item.children) {
+                    item.children.push(newItem)
+                  } else {
+                    formItems.push(newItem)
+                  }
+
+                } else {
+                  if (!item.reactions.addFormItem) return
+                  const arr = item.children || formItems
+                  const index = arr.findIndex(sub => sub.id === item.reactions?.addFormItem?.id)
+                  if (index === -1) return
+                  arr.splice(index, 1)
+
+                  if (!item.reactions.addFormItem.path) return
+                  _.unset(formValue, item.reactions.addFormItem.path)
+                  _.unset(formRules, item.reactions.addFormItem.path)
+                  console.log(formValue, formRules)
+                }
+              }
+            })
+          }
+        }
+      )
+
+      watchStopHandles.push(stop)
+    }
+  }
 
   const isObject = (val: any): boolean => {
     return val !== null && typeof val === 'object' && !Array.isArray(val)
@@ -77,50 +154,6 @@ export function useFormWrapper(formItems: FormItem[]) {
     return list.length
   }
 
-  const createPath = (list: FormItem[], path?: string) => {
-    list.forEach((item: FormItem) => {
-      const { itemKey, itemType, children } = item
-
-      const setPath = (k: string, p?: string) => {
-        let key = ''
-        if (p) key += p
-        key += k
-        return key
-      }
-
-      switch (itemType) {
-        case 'void': {
-          if (children) {
-            const p = path ?? ''
-            createPath(children, p)
-          }
-          break
-        }
-        case 'object': {
-          if (children) {
-            const p = path ?? ''
-            createPath(children, `${p}${itemKey}.`)
-          }
-          item['path'] = setPath(itemKey, path)
-          break
-        }
-        case 'array': {
-          if (children) {
-            const p = path ?? ''
-            createPath(children, `${p}${itemKey}[0].`)
-          }
-          item['path'] = setPath(itemKey, path)
-          break
-        }
-
-        default: {
-          item['path'] = setPath(itemKey, path)
-          break
-        }
-      }
-    })
-  }
-
   const createRule = (item: FormItem) => {
     const { itemType, component } = item
 
@@ -148,20 +181,37 @@ export function useFormWrapper(formItems: FormItem[]) {
     }
   }
 
-  const build = (list: FormItem[], path?: string) => {
+  const build = (list: FormItem[], path = '', nodePath = '') => {
     const data: Record<string, any> = {}
     const rule: Record<string, any> = {}
+    const depe: Record<string, string[]> = {}
 
-    list.forEach((item: FormItem) => {
-      const { itemType, itemKey, itemValue, children, required = false } = item
+    list.forEach((item: FormItem, index: number) => {
+      const { itemKey, itemType, itemValue, children, required = false, reactions } = item
+
+      // formValue 生成路径（核心逻辑合并）
+      const currentPath = path ? `${path}${itemKey}` : itemKey
+      item.path = currentPath // 保留 path 信息
+
+      // formItems 路径
+      const currentNodePath = nodePath ? `${nodePath}[${index}]` : `[${index}]`
+
+      // 收集 reactive
+      if (reactions && reactions.dependencies) {
+        if (!Object.prototype.hasOwnProperty.call(depe, reactions.dependencies)) {
+          depe[reactions.dependencies] = []
+        }
+
+        depe[reactions.dependencies].push(currentNodePath)
+      }
 
       switch (itemType) {
         case 'void': {
           if (children) {
-            const p = path ?? ''
-            const { data: d, rule: r } = build(children, p)
+            const { data: d, rule: r, depe: _depe } = build(children, path, nodePath)
             Object.assign(data, d)
             Object.assign(rule, r)
+            Object.assign(depe, _depe)
           }
           break
         }
@@ -169,66 +219,78 @@ export function useFormWrapper(formItems: FormItem[]) {
         case 'object': {
           const val = isObject(itemValue) ? itemValue : {}
           const rVal = {}
+          const dVal = {}
 
           if (children) {
-            const p = path ?? ''
-            const { data: d, rule: r } = build(children, `${p}${itemKey}.`)
+            const {
+              data: d,
+              rule: r,
+              depe: _depe
+            } = build(children, `${currentPath}.`, `${currentNodePath}.children`)
             Object.assign(val, d)
             Object.assign(rVal, r)
+            Object.assign(dVal, _depe)
           }
-          Object.assign(data, { [itemKey]: val })
+
+          data[itemKey] = val
           Object.assign(rule, rVal)
+          Object.assign(depe, dVal)
           break
         }
 
         case 'array': {
           const arr = isArray(itemValue) ? itemValue : []
           const rVal = {}
+          const dVal = {}
 
           if (children) {
-            const p = path ?? ''
-            const { data: d, rule: r } = build(children, `${p}${itemKey}[0].`)
-
+            const {
+              data: d,
+              rule: r,
+              depe: _depe
+            } = build(children, `${currentPath}[0].`, `${currentNodePath}[${index}].children`)
             arr.push(d)
             Object.assign(rVal, r)
+            Object.assign(dVal, _depe)
           }
 
-          Object.assign(data, { [itemKey]: arr })
+          data[itemKey] = arr
           Object.assign(rule, rVal)
+          Object.assign(depe, dVal)
           break
         }
 
         default: {
           data[itemKey] = itemValue ?? null
-
           if (required) {
-            let key = ''
-
-            if (path) {
-              key += path
-            }
-
-            key += itemKey
-
-            rule[key] = createRule(item)
+            rule[currentPath] = createRule(item)
           }
           break
         }
       }
     })
 
-    return { data, rule }
+    return { data, rule, depe }
   }
 
-  const { data: result, rule: r } = build(formItems)
-  createPath(formItems)
+  const rebuild = (formItem: FormItem) => {
+    const { data, rule } = build([formItem])
 
-  // console.log(formItems, '1')
-  // console.log(result, '::::')
-  // console.log(r)
+    Object.assign(formValue, data)
+    Object.assign(formRules, rule)
+    // handleReactions(newDepe)
+  }
+
+  const { data: result, rule: r, depe } = build(formItems)
+
 
   Object.assign(formValue, result)
   Object.assign(formRules, r)
+  handleReactions(depe)
+
+  console.log(formValue, 'formValue')
+  console.log(formRules, 'formRules')
+  console.log(depe, 'reactions')
 
   return { formValue, formRules, addFormArrayItem, removeFormArrayItem, checkFormArrayLength }
 }
