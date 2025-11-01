@@ -1,6 +1,10 @@
 import { reactive } from 'vue'
 import type { FormItem } from '@/types/form'
 import type { FormItemRule } from 'naive-ui'
+import _ from 'lodash'
+
+export type FormArrayItemFn = (key: string) => void
+export type FormCheckArrayLength = (key: string) => number
 
 export function useFormWrapper(formItems: FormItem[]) {
   const formValue = reactive<Record<string, any>>({})
@@ -12,6 +16,65 @@ export function useFormWrapper(formItems: FormItem[]) {
 
   const isArray = (val: any): boolean => {
     return Array.isArray(val)
+  }
+
+  const deepNullClone = (obj: any) =>
+    _.cloneDeepWith(obj, (value) => {
+      if (_.isArray(value) || _.isPlainObject(value)) return
+      return null
+    })
+
+  const addFormArrayItem: FormArrayItemFn = (key: string) => {
+    const list = _.get(formValue, key, [])
+    if (Array.isArray(list) && list.length) {
+      // 添加 formValue
+      const item = deepNullClone(list[0])
+      list.push(item)
+
+      // 添加 formRules
+      const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      const rulesKey = Object.keys(formRules).filter((k) => regex.test(k))
+      const rulesValue: Record<string, any> = {}
+      rulesKey.forEach((k) => {
+        rulesValue[k] = formRules[k]
+        delete formRules[k]
+      })
+      list.forEach((item, index) => {
+        rulesKey.forEach((k) => {
+          const suffix = k.split(`${key}[0]`)[1]
+          const ruleKey = `${key}[${index}]${suffix}`
+          formRules[ruleKey] = rulesValue[k]
+        })
+      })
+    } else {
+      console.log('useFormWrapper addFormArrayItem key', key)
+    }
+  }
+
+  const removeFormArrayItem: FormArrayItemFn = (key: string) => {
+    const list = _.get(formValue, key, [])
+    if (Array.isArray(list) && list.length) {
+      const lastIndex = list.length - 1
+
+      // 删除 formValue
+      list.splice(lastIndex, 1)
+
+      // 删除 formRules
+      const lastRuleKey = `${key}[${lastIndex}]`
+      const regex = new RegExp(lastRuleKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      Object.keys(formRules).forEach((k) => {
+        if (regex.test(k)) {
+          delete formRules[k]
+        }
+      })
+    } else {
+      console.log('useFormWrapper removeFormArrayItem key', key)
+    }
+  }
+
+  const checkFormArrayLength: FormCheckArrayLength = (key: string) => {
+    const list = _.get(formValue, key, [])
+    return list.length
   }
 
   const createPath = (list: FormItem[], path?: string) => {
@@ -160,12 +223,12 @@ export function useFormWrapper(formItems: FormItem[]) {
   const { data: result, rule: r } = build(formItems)
   createPath(formItems)
 
-  console.log(formItems, '1')
-  console.log(result, '::::')
-  console.log(r)
+  // console.log(formItems, '1')
+  // console.log(result, '::::')
+  // console.log(r)
 
   Object.assign(formValue, result)
   Object.assign(formRules, r)
 
-  return { formValue, formRules }
+  return { formValue, formRules, addFormArrayItem, removeFormArrayItem, checkFormArrayLength }
 }

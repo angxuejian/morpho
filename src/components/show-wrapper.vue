@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, type Ref } from 'vue'
+import { provide, ref, type Ref } from 'vue'
 import { NButton } from 'naive-ui'
 import formWrapper from '@/components/form-wrapper.vue'
 import showItem from './show-item.vue'
@@ -13,28 +13,8 @@ interface Props {
 const props = defineProps<Props>()
 const formRef: Ref = ref()
 
-const { formValue, formRules } = useFormWrapper(props.list)
-
-// setTimeout(() => {
-//   Object.assign(formValue, {
-//     list: [
-//       { teacher: null, test: [ { input: {a: null, b: null } }, { input: {a: null, b: null} }] },
-//       { teacher: null, test: [ { input: {a: null, b: null } }, { input: {a: null, b: null} }] },
-
-//       // { teacher: null }
-//     ]
-//   })
-
-//   Object.assign(formRules, {
-//     'list[0].teacher': { required: true },
-//     "list[0].test[0].input.a": { required: true, message: '123' },
-//     "list[0].test[1].input.a": { required: true },
-//     "list[0].test[0].input.b": { required: true },
-//     "list[0].test[1].input.b": { required: true },
-//     // 'list[0].teacher': { required: true },
-//     // 'list[1].teacher': { required: true }
-//   })
-// }, 5000);
+const { formValue, formRules, addFormArrayItem, removeFormArrayItem, checkFormArrayLength } =
+  useFormWrapper(props.list)
 
 const submit = () => {
   console.log(formValue)
@@ -44,6 +24,8 @@ const submit = () => {
 const reset = () => {
   formRef.value.clearValidate()
 }
+
+provide('useFormWrapper', { addFormArrayItem, removeFormArrayItem, checkFormArrayLength })
 </script>
 
 <template>

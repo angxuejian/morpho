@@ -107,8 +107,8 @@ const setValue = (val: any, path: string) => {
     <template v-else-if="item.itemType === 'array'">
       <form-item :formItemPath="calcPath(item)" :formItem="item">
         <!-- show-item -->
-        <template v-if="item.children && getValue(item.path!)">
-          <template v-for="(sub, i) in getValue(item.path!)" :key="i">
+        <template v-if="item.children && getValue(calcPath(item))">
+          <template v-for="(sub, i) in getValue(calcPath(item))" :key="i">
             <show-item
               :itemParentPath="setParentPath(item, i)"
               :items="item.children"
