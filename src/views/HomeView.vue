@@ -492,7 +492,7 @@ const list = ref<FormItem[]>([
 
 <template>
   <main class="w-full h-full flex justify-center">
-    <div class="w-[60%] h-full bg-[#ededed]">
+    <div class="w-[60%] h-full bg-[#ededed] md:w-[60%] w-full">
       <form-show :list="list" />
     </div>
   </main>

@@ -29,12 +29,14 @@ provide('useFormWrapper', { addFormArrayItem, removeFormArrayItem, checkFormArra
 </script>
 
 <template>
-  <div>
-    <form-wrapper ref="formRef" :model="formValue" :rules="formRules">
+  <div class="w-full h-full flex flex-col">
+    <div class="flex-1 overflow-y-auto">
+      <form-wrapper ref="formRef" :model="formValue" :rules="formRules">
       <show-item v-model:formValue="formValue" :items="props.list" />
     </form-wrapper>
+    </div>
 
-    <div class="mt-10 flex justify-end px-5">
+    <div class="py-4 bg-[#fff] flex justify-end px-5">
       <NButton @click="submit" class="mr-5" type="primary">submit</NButton>
       <NButton @click="reset" type="error">reset</NButton>
     </div>
